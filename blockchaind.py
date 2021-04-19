@@ -4,14 +4,19 @@ import hashlib
 import os
 import pickle
 import base64
+import rsa
 # Time stuff - Just for redability these are defined.. completely useless use for functions
 def strtotimestamp(date):
     return datetime.datetime.strptime(date,"%Y-%m-%d %H:%M:%S.%f")
 # END Time stuff
 
 # Block chain skelliton code
-def create_transaction(sender,reciever,metadata,data):
-    transaction={"SENDER":sender,"RECIEVER":reciever,"TIMESTAMP":str(datetime.datetime.now()),"METADATA":metadata,"DATA":data}
+def create_transaction(sender_pub,sender_priv,reciever,metadata,data):
+    transaction={"SENDER":sender_pub,"RECIEVER":reciever,"TIMESTAMP":str(datetime.datetime.now()),"METADATA":metadata,"DATA":data}
+    transaction_encoded=pickle.dumps(transaction)
+    privkey = rsa.PrivateKey.load_pkcs1(base64.decodebytes(sender_priv),"DER")
+    signature=rsa.sign(transaction_encoded,privkey,hash_method="SHA-256")
+    transaction={"TRANSACTION":transaction,"SIGNATURE":signature}
     return transaction
 def create_block(header,transaction: list,transaction_counter):
     block={"HEADER":header,"TRANSATION":transaction,"TRANSACTION_COUNTER":transaction_counter}
@@ -21,8 +26,9 @@ def create_block_header(id,version,previous_block_hash,merkle_root_hash,timestam
     return block_header
 # END Block chain skelliton
 
+#Block disk interface
 def saveBlock(block,N=False): # N means dont do anything just show what it might do.
-    stats={"current":-1,"hash":0,"block_count":0}
+    stats={"current":-1,"hash":0,"block_count":0,"last_transaction":0}
     if(not os.path.exists("blockchain/stats")):
         if(not os.path.exists("blockchain")):
             os.mkdir("blockchain")
@@ -41,15 +47,35 @@ def saveBlock(block,N=False): # N means dont do anything just show what it might
     if(N):
         print({"hash":nexthash,"count":nextcount,"current":nextcurrent})
     else:
-        stats={"current":nextcurrent,"hash":nexthash,"block_count":nextcount}
+        stats={"current":nextcurrent,"hash":nexthash,"block_count":nextcount,"last_transaction":stats["last_transaction"]}
         if(nextcurrent==0):
             stats["block_count"]=1 # Genesis block
         f.write(pickle.dumps(stats))
         f.close()
         f=open("blockchain/block_"+str(nextcurrent),"wb")
         f.write(pickle.dumps([block,nexthash]))
-block=create_block(create_block_header(0,0,0,0,str(datetime.datetime.now()),0,0),[create_transaction(0,1,b"some metadata",b"some data")],1)
+def loadBlockAndVerify(blockid):
+    if(not os.path.exists("blockchain/block_"+str(blockid))):
+        raise ValueError("Block not avaiable")
+    else:
+        f=open("blockchain/block_"+str(blockid),"rb")
+        block,hash = pickle.loads(f.read())
+        newhash = str(hashlib.sha256(pickle.dumps(block)).hexdigest())
+        if(newhash == hash):
+            return block
+
+# END Block disk interface
+
+sender_private = b'MIICYAIBAAKBgQDCmg8eXbWUMfTJLrEGtu4ZnmpZEdtAgzLyoapbdnfIEARHye9ZETScrCX4sT0FJGcjrKiHQtSobau7NPIgDWw9kU3UpUekNRVSf0roOAQg84slJoRBI1f34l9NBjgms1gkCB6FqsnVD3OgTcErMaUL8hDsXPYsnKNnhZP5IrHh+wIDAQABAoGAenbvSsHYUoG5tZ3fpAUdBBxQeusk2o12U4Dvr413RfzmZLMtIBUW0f34C3CmoQTOr4GpsS2anMAf0bk4mGZOcMyuY8cEl2O5oUfm03LOxGoR2bw3/v/g0aPWIxJFulD6aCvAYhuUSngAZyLVJSIu3hsUqBB/Oye9YVyVxk/LEekCRQDbZwE/cP6stykxYfLbuGDsxwzbK8VUSbniJPAJmpHj3Lsh5RgddfQ+KXgRuiy4WTM3Wa2e5/VgVaxKR4W/7O+m7U6tJQI9AOMQAwD20fygTfNC6342OWVnoO8mSH+8TC/3WbgumxmW2dYpFAwWLAgtUDEs1VrVdSpEaUkfWa6pro94nwJEAWSF/YEaHL6M5GNax0pEUzxwOHPurLpLE8RoQadZhbjA91Yc8RLumfZpbLNh1Um7qX5IO9n9FL92eII7txwp6UVYWoECPGW5ua7H5WHJq8KNO5XK00IEAEzEGPzpLjTbGx3x+1imhad1td6IXGe5bVDqphdQxHIQPh8dZX9j06nBPwJFAKbIwDdJS3Zc/i/Gz3u8cDcX+a/HP6XVcmBfIQmJnqnfh+CX67nDI9s51kGzB8Qhw2TQtW8ifCKCUFXEhd/IoqYVVu6L'
+sender_public = b'MIGJAoGBAMKaDx5dtZQx9MkusQa27hmealkR20CDMvKhqlt2d8gQBEfJ71kRNJysJfixPQUkZyOsqIdC1Khtq7s08iANbD2RTdSlR6Q1FVJ/Sug4BCDziyUmhEEjV/fiX00GOCazWCQIHoWqydUPc6BNwSsxpQvyEOxc9iyco2eFk/kiseH7AgMBAAE='
+block=create_block(header=create_block_header(id=0,version=0,previous_block_hash=0,
+                   merkle_root_hash=0,timestamp=str(datetime.datetime.now()),difficulty=0,
+                   nonce=0),transaction=[create_transaction(sender_pub=sender_public,
+                   sender_priv=sender_private,reciever=1,metadata=b"some metadata",
+                   data=b"some data")],transaction_counter=1)
 saveBlock(block)
+if(loadBlockAndVerify(0)==block):
+    print("Verified!")
     
 
 
