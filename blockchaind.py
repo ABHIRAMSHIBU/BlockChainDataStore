@@ -5,6 +5,7 @@ import os
 import pickle
 import base64
 import rsa
+testmode=True
 # Time stuff - Just for redability these are defined.. completely useless use for functions
 def strtotimestamp(date):
     return datetime.datetime.strptime(date,"%Y-%m-%d %H:%M:%S.%f")
@@ -72,21 +73,73 @@ def loadBlockAndVerify(blockid):
 
 # END Block disk interface
 
+def mine(transaction: list,difficulty="1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",show_mining=False):
+    id=0
+    if(os.path.exists("blockchain/stats")):
+        f=open("blockchain/stats","rb")
+        stats = pickle.loads(f.read())
+        id=stats["current"]+1
+        f.close()
+    version=0
+    previous_block_hash=0
+    merkle_root_hash=0
+    timestamp=str(datetime.datetime.now())
+    transaction_counter=1
+    nonce=0
+    if(id!=0):
+        if(os.path.exists("blockchain/block_"+str(id-1))):
+            f=open("blockchain/block_"+str(id-1),"rb")
+            previous_block_hash = pickle.loads(f.read())[-1]
+        else:
+            print("Miner:Cannot find previous block!")
+    print("Started mining block",id)
+    while(True):
+        block=create_block(header=create_block_header(id=id,version=version,previous_block_hash=previous_block_hash,
+                    merkle_root_hash=merkle_root_hash,timestamp=timestamp,difficulty=difficulty,
+                    nonce=nonce),transaction=transaction,transaction_counter=1)
+        hash=str(hashlib.sha256(pickle.dumps(block)).hexdigest())
+        if(show_mining):
+            print(int(hash,16),int(difficulty,16))
+        if(int(hash,16)<int(difficulty,16)):
+            if(show_mining):
+                print("Succefully mined block "+str(id))
+                print("Hash:",hash)
+            break
+        nonce+=1
+    print(hash)
+    return block
+def fileToMeta_Data(filename):
+    f=open(filename,"rb")
+    data=f.read()
+    metadata={"LENGTH":len(data),"FILENAME":filename.split("/")[-1]}
+    return metadata,data
+
 sender_private = b'MIICYAIBAAKBgQDCmg8eXbWUMfTJLrEGtu4ZnmpZEdtAgzLyoapbdnfIEARHye9ZETScrCX4sT0FJGcjrKiHQtSobau7NPIgDWw9kU3UpUekNRVSf0roOAQg84slJoRBI1f34l9NBjgms1gkCB6FqsnVD3OgTcErMaUL8hDsXPYsnKNnhZP5IrHh+wIDAQABAoGAenbvSsHYUoG5tZ3fpAUdBBxQeusk2o12U4Dvr413RfzmZLMtIBUW0f34C3CmoQTOr4GpsS2anMAf0bk4mGZOcMyuY8cEl2O5oUfm03LOxGoR2bw3/v/g0aPWIxJFulD6aCvAYhuUSngAZyLVJSIu3hsUqBB/Oye9YVyVxk/LEekCRQDbZwE/cP6stykxYfLbuGDsxwzbK8VUSbniJPAJmpHj3Lsh5RgddfQ+KXgRuiy4WTM3Wa2e5/VgVaxKR4W/7O+m7U6tJQI9AOMQAwD20fygTfNC6342OWVnoO8mSH+8TC/3WbgumxmW2dYpFAwWLAgtUDEs1VrVdSpEaUkfWa6pro94nwJEAWSF/YEaHL6M5GNax0pEUzxwOHPurLpLE8RoQadZhbjA91Yc8RLumfZpbLNh1Um7qX5IO9n9FL92eII7txwp6UVYWoECPGW5ua7H5WHJq8KNO5XK00IEAEzEGPzpLjTbGx3x+1imhad1td6IXGe5bVDqphdQxHIQPh8dZX9j06nBPwJFAKbIwDdJS3Zc/i/Gz3u8cDcX+a/HP6XVcmBfIQmJnqnfh+CX67nDI9s51kGzB8Qhw2TQtW8ifCKCUFXEhd/IoqYVVu6L'
 sender_public = b'MIGJAoGBAMKaDx5dtZQx9MkusQa27hmealkR20CDMvKhqlt2d8gQBEfJ71kRNJysJfixPQUkZyOsqIdC1Khtq7s08iANbD2RTdSlR6Q1FVJ/Sug4BCDziyUmhEEjV/fiX00GOCazWCQIHoWqydUPc6BNwSsxpQvyEOxc9iyco2eFk/kiseH7AgMBAAE='
 reciever_public = b'MIGJAoGBAMzzGN/1Ohd2g8t7EiRj5PARxVVhMrEH9WPz82Up2lxiNMN12LUXt+YaQ1kE2jRmCZi9gClmf1v1+p6pvKZAWRSVSTDzcpavfVwP+VqhED22JrwyMqOZbMBHLwIeaBWSdajhpcXTxMnWdPnCywGAKW2JBggEDpT3OK9yOEWq4XnJAgMBAAE='
 reciever_private = b'MIICXwIBAAKBgQDM8xjf9ToXdoPLexIkY+TwEcVVYTKxB/Vj8/NlKdpcYjTDddi1F7fmGkNZBNo0ZgmYvYApZn9b9fqeqbymQFkUlUkw83KWr31cD/laoRA9tia8MjKjmWzARy8CHmgVknWo4aXF08TJ1nT5wssBgCltiQYIBA6U9zivcjhFquF5yQIDAQABAoGAOBMPLD+BLGg9uQ+sMA6w1cpW7nxQjUU7K6TUZEpmNz6bZxs4NpwNscRfxtxgA1QjrgmzJiCoGfYcIwsXnLbJF+5ybPk13Qu3MvAzyljLlhtmxKUy2VyUu4nncfHIpCeHiCrRcJ2uzbpnc0hlL34ZCTe3vbejPPud21Z+h3liQwECRQDPcu8XpR0rWxG3YdfO96ov9Q6RXqnHdt35PSLy9yCoUDqAklw3h+FaR3FCe4S4lQCSiNLxecSPdOnH6/DGHhuQHp2yoQI9APzqarJgdaCUjkEbaqZJfpbqs1kIpyVLyDsA1O4sdZlBM3I/MlFp6chvsLPEBNkzPTkmqZ1UwfJV7BEeKQJEK2J0ElPbt9eB6wIxaf1twD3V4B0WELsRTTC2AG4ijFDLC1yQoKRwQrsyOp8ucJPo3Lx0sT+wFfhzc/YqEqT1Sry8akECPGv2hWVv18aco70XPweNCATUW4r+Lpu1JdxKFps1T14Efzmd0JUAaVOumfejDY7KWLA02OLYc5JHK2aDQQJEeuddtBwpCQshahPI9RdwLTDnfcF9ysp2f5KqcuvIwOVL6mOT/WmRNH2DAL3/LaoHYuYSugTMNRNaL2edqJ1V+dj9rcc='
 
-block=create_block(header=create_block_header(id=0,version=0,previous_block_hash=0,
-                   merkle_root_hash=0,timestamp=str(datetime.datetime.now()),difficulty=0,
-                   nonce=0),transaction=[create_transaction(sender_pub=sender_public,
-                   sender_priv=sender_private,reciever=1,metadata=b"some metadata",
-                   data=b"some data")],transaction_counter=1)
+
+# block=create_block(header=create_block_header(id=0,version=0,previous_block_hash=0,
+#                    merkle_root_hash=0,timestamp=str(datetime.datetime.now()),difficulty=0,
+#                    nonce=0),transaction=[create_transaction(sender_pub=sender_public,
+#                    sender_priv=sender_private,reciever=1,metadata=b"some metadata",
+#                    data=b"some data")],transaction_counter=1)
+if(testmode):
+    os.system("rm -rf blockchain")
+metadata,data=fileToMeta_Data("testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf")
+block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
+              reciever=1,metadata=metadata,data=data)],show_mining=True)
 saveBlock(block)
 if(loadBlockAndVerify(0)==block):
-    print("Verified!")
-print(check_transaction(sender_public, block["TRANSACTION"][0]))
-
+    print("Verified! 0")
+print("Checking transaction:",check_transaction(sender_public, block["TRANSACTION"][0]))
+metadata,data=fileToMeta_Data("testfile/7104822.png")
+block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
+              reciever=1,metadata=metadata,data=data)],show_mining=True)
+saveBlock(block)
+if(loadBlockAndVerify(1)==block):
+    print("Verified! 1")
 
         
 
