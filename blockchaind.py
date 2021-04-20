@@ -5,6 +5,7 @@ import os
 import pickle
 import base64
 import rsa
+import sys
 testmode=True
 # Time stuff - Just for redability these are defined.. completely useless use for functions
 def strtotimestamp(date):
@@ -96,7 +97,7 @@ def mine(transaction: list,difficulty="1ffffffffffffffffffffffffffffffffffffffff
     while(True):
         block=create_block(header=create_block_header(id=id,version=version,previous_block_hash=previous_block_hash,
                     merkle_root_hash=merkle_root_hash,timestamp=timestamp,difficulty=difficulty,
-                    nonce=nonce),transaction=transaction,transaction_counter=1)
+                    nonce=nonce),transaction=transaction,transaction_counter=transaction_counter)
         hash=str(hashlib.sha256(pickle.dumps(block)).hexdigest())
         if(show_mining):
             print(int(hash,16),int(difficulty,16))
@@ -120,26 +121,87 @@ reciever_public = b'MIGJAoGBAMzzGN/1Ohd2g8t7EiRj5PARxVVhMrEH9WPz82Up2lxiNMN12LUX
 reciever_private = b'MIICXwIBAAKBgQDM8xjf9ToXdoPLexIkY+TwEcVVYTKxB/Vj8/NlKdpcYjTDddi1F7fmGkNZBNo0ZgmYvYApZn9b9fqeqbymQFkUlUkw83KWr31cD/laoRA9tia8MjKjmWzARy8CHmgVknWo4aXF08TJ1nT5wssBgCltiQYIBA6U9zivcjhFquF5yQIDAQABAoGAOBMPLD+BLGg9uQ+sMA6w1cpW7nxQjUU7K6TUZEpmNz6bZxs4NpwNscRfxtxgA1QjrgmzJiCoGfYcIwsXnLbJF+5ybPk13Qu3MvAzyljLlhtmxKUy2VyUu4nncfHIpCeHiCrRcJ2uzbpnc0hlL34ZCTe3vbejPPud21Z+h3liQwECRQDPcu8XpR0rWxG3YdfO96ov9Q6RXqnHdt35PSLy9yCoUDqAklw3h+FaR3FCe4S4lQCSiNLxecSPdOnH6/DGHhuQHp2yoQI9APzqarJgdaCUjkEbaqZJfpbqs1kIpyVLyDsA1O4sdZlBM3I/MlFp6chvsLPEBNkzPTkmqZ1UwfJV7BEeKQJEK2J0ElPbt9eB6wIxaf1twD3V4B0WELsRTTC2AG4ijFDLC1yQoKRwQrsyOp8ucJPo3Lx0sT+wFfhzc/YqEqT1Sry8akECPGv2hWVv18aco70XPweNCATUW4r+Lpu1JdxKFps1T14Efzmd0JUAaVOumfejDY7KWLA02OLYc5JHK2aDQQJEeuddtBwpCQshahPI9RdwLTDnfcF9ysp2f5KqcuvIwOVL6mOT/WmRNH2DAL3/LaoHYuYSugTMNRNaL2edqJ1V+dj9rcc='
 
 
-# block=create_block(header=create_block_header(id=0,version=0,previous_block_hash=0,
-#                    merkle_root_hash=0,timestamp=str(datetime.datetime.now()),difficulty=0,
-#                    nonce=0),transaction=[create_transaction(sender_pub=sender_public,
-#                    sender_priv=sender_private,reciever=1,metadata=b"some metadata",
-#                    data=b"some data")],transaction_counter=1)
+# # block=create_block(header=create_block_header(id=0,version=0,previous_block_hash=0,
+# #                    merkle_root_hash=0,timestamp=str(datetime.datetime.now()),difficulty=0,
+# #                    nonce=0),transaction=[create_transaction(sender_pub=sender_public,
+# #                    sender_priv=sender_private,reciever=1,metadata=b"some metadata",
+# #                    data=b"some data")],transaction_counter=1)
+
 if(testmode):
     os.system("rm -rf blockchain")
-metadata,data=fileToMeta_Data("testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf")
-block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
-              reciever=1,metadata=metadata,data=data)],show_mining=True)
-saveBlock(block)
-if(loadBlockAndVerify(0)==block):
-    print("Verified! 0")
-print("Checking transaction:",check_transaction(sender_public, block["TRANSACTION"][0]))
-metadata,data=fileToMeta_Data("testfile/7104822.png")
-block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
-              reciever=1,metadata=metadata,data=data)],show_mining=True)
-saveBlock(block)
-if(loadBlockAndVerify(1)==block):
-    print("Verified! 1")
+# metadata,data=fileToMeta_Data("testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf")
+# block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
+#               reciever=1,metadata=metadata,data=data)],show_mining=True)
+# saveBlock(block)
+# if(loadBlockAndVerify(0)==block):
+#     print("Verified! 0")
+# print("Checking transaction:",check_transaction(sender_public, block["TRANSACTION"][0]))
+# metadata,data=fileToMeta_Data("testfile/7104822.png")
+# block = mine([create_transaction(sender_pub=sender_public,sender_priv=sender_private,
+#               reciever=1,metadata=metadata,data=data)],show_mining=True)
+# saveBlock(block)
+# if(loadBlockAndVerify(1)==block):
+#     print("Verified! 1")
 
-        
+# Begin UI STUFF
+
+print("Copyleft 🄯 2021 Abhiram Shibu, Aishwarya Venugopal")
+print("This program comes with NO WARRANTY and should ONLY be used FOR ACADEMIC PURPOSE!")
+print('''This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA''')
+transactions=[]
+def main():
+    global transactions
+    global sender_public
+    global sender_private
+    global reciever_private
+    global reciever_public
+    print("Demo MENU")
+    print("t) Add Transaction")
+    print("m) Mine")
+    print("e) Exit")
+    c=input("Enter an option from above:")
+    if(c[0].lower()=='t' or c[0]=='1'):
+        filename=input("Drag and drop or enter the path to file (d/?):").replace("'","")
+        private_sender = input("Enter private key of sender (d/?):")
+        public_sender = input("Enter public key of sender (d/?):")
+        public_receiver = input("Enter public key of receiver (d/?):")
+        if(len(filename)==1 and filename[0].lower()=="d"):
+            filename="testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf"
+        while(True):
+            if(not os.path.exists(filename)):
+                filename=input("Drag and drop or enter the path to file (d/?):").replace("'","")
+            else:
+                break
+        if(len(filename)==1 and filename[0].lower()=="d"):
+            filename="testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf"
+        if(not(len(private_sender)==1 and private_sender[0].lower()=="d")):
+            sender_private=private_sender
+        if(not(len(public_sender)==1 and public_sender[0].lower()=="d")):
+            sender_public=public_sender
+        if(not(len(public_receiver)==1 and public_receiver[0].lower()=="d")):
+            reciever_public=public_receiver       
+        metadata,data=fileToMeta_Data(filename)
+        transactions.append(create_transaction(sender_pub=sender_public,sender_priv=sender_private,reciever=reciever_public,metadata=metadata,data=data))
+    elif(c[0].lower()=='m' or c[0]=='2'):
+        print("Creating block by mining")
+        block = mine(transactions,show_mining=True)
+        print("Saving to disk")
+        saveBlock(block)
+        if(loadBlockAndVerify(block["HEADER"]["ID"])==block):
+            print("Verified!",block["HEADER"]["ID"])
+        transactions=[]
+    elif(c[0].lower()=='e' or c[0]=='3'):
+        print("Exiting gracefully..")
+        return 1
+    return 0
+try:
+    while(True):
+        if(main()):
+            break
+except KeyboardInterrupt:
+    print("SIGTERM detected... Stopping operations")
+    print("This is not a good idea. I am unable to save any work, dataloss imminent!")
+# END UI STUFF        
 
