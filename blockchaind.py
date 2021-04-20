@@ -126,7 +126,11 @@ reciever_private = b'MIICXwIBAAKBgQDM8xjf9ToXdoPLexIkY+TwEcVVYTKxB/Vj8/NlKdpcYjT
 # #                    nonce=0),transaction=[create_transaction(sender_pub=sender_public,
 # #                    sender_priv=sender_private,reciever=1,metadata=b"some metadata",
 # #                    data=b"some data")],transaction_counter=1)
-
+if(len(sys.argv)>1):
+    if(sys.argv[1]=="--reset" or sys.argv[1]=="-r" or sys.argv[1]=="--test" or sys.argv[1]=="-t"):
+        print("TEST MODE")
+    else:
+        testmode=False
 if(testmode):
     os.system("rm -rf blockchain")
 # metadata,data=fileToMeta_Data("testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf")
