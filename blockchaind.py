@@ -7,6 +7,7 @@ import base64
 import rsa
 import sys
 testmode=True
+useless=False
 # Time stuff - Just for redability these are defined.. completely useless use for functions
 def strtotimestamp(date):
     return datetime.datetime.strptime(date,"%Y-%m-%d %H:%M:%S.%f")
@@ -131,6 +132,15 @@ if(len(sys.argv)>1):
         print("TEST MODE")
     else:
         testmode=False
+if(len(sys.argv)>1):
+    start=True
+    for i in sys.argv:
+        if(start):
+            start=False
+            continue
+        if(i=="--less" or i=="-l"):
+            useless=True
+            
 if(testmode):
     os.system("rm -rf blockchain")
 # metadata,data=fileToMeta_Data("testfile/Bitcoin - A Peer-to-Peer Electronic Cash System White Paper.pdf")
@@ -146,6 +156,7 @@ if(testmode):
 # saveBlock(block)
 # if(loadBlockAndVerify(1)==block):
 #     print("Verified! 1")
+
 
 # Begin UI STUFF
 
@@ -164,6 +175,7 @@ def main():
     print("Demo MENU")
     print("t) Add Transaction")
     print("m) Mine")
+    print("d) Debug")
     print("e) Exit")
     c=input("Enter an option from above:")
     if(c[0].lower()=='t' or c[0]=='1'):
@@ -196,7 +208,45 @@ def main():
         if(loadBlockAndVerify(block["HEADER"]["ID"])==block):
             print("Verified!",block["HEADER"]["ID"])
         transactions=[]
-    elif(c[0].lower()=='e' or c[0]=='3'):
+    elif(c[0].lower()=='d' or c[0]=='3'):
+        blockdump=True
+        statsdump=True
+        if(os.path.exists("dumpblock.py")):
+            print("BlockDumper module is found, adding")
+        else:
+            print("Warning: BlockDumper is missing, try adding manually")
+            blockdump=False
+        if(os.path.exists("dumpstats.py")):
+            print("StatsDumper module is found, adding")
+        else:
+            print("Warning: StatDumper is missing, try adding manually")
+            statsdump=False
+        print("Debugging console menu")
+        if(blockdump):
+            print("b) DUMP BLOCK")
+        if(statsdump):
+            print("s) DUMP STATS")
+        choice = input("Enter a choice:")
+        if(choice=="b"):
+            if(not os.path.exists("blockchain/stats")):
+                print("ERROR: No blockchain or stats found!")
+            else:
+                f=open("blockchain/stats","rb")
+                stats = pickle.loads(f.read())
+                f.close()
+                nblocks=stats["block_count"]
+                choice = input("Enter block id (valid 0-"+str(nblocks)+"):")
+                if(os.path.exists("blockchain/block_"+str(choice))):
+                    if(not useless):
+                        os.system("python dumpblock.py blockchain/block_"+str(choice))
+                    else:
+                        os.system("python dumpblock.py blockchain/block_"+str(choice)+"|less")
+        elif(choice=="s"):
+            if(not os.path.exists("blockchain/stats")):
+                print("ERROR: No blockchain or stats found!")
+            else:
+                os.system("python dumpstats.py")
+    elif(c[0].lower()=='e' or c[0]=='4'):
         print("Exiting gracefully..")
         return 1
     return 0
